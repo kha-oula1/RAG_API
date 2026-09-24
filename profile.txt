@@ -1,0 +1,11 @@
+My name is Khaoula Belhadj.
+I'm currently learning about cloud computing, AI, and DevOps.
+
+My career goal is to become a e.g., DevOps engineer, cloud architect, AI engineer.
+I'm especially interested in e.g., automation, infrastructure as code, machine learning.
+
+I have experience with e.g., Python, JavaScript, AWS, Docker.
+I'm currently building projects on NextWork to grow my hands-on skills.
+
+For fun, I enjoy e.g., hiking, playing guitar, reading sci-fi novels.
+A fun fact about me is e.g., I once ran a marathon, I can solve a Rubik's cube in under a minute.
