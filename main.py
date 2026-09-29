@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 import chromadb
 
 # Mock LLM mode for CI testing
@@ -14,6 +14,12 @@ collection = chroma.get_or_create_collection("docs")
 
 @app.post("/query")
 def query(q: str):
+    if collection.count() == 0:
+        raise HTTPException(
+            status_code=503,
+            detail="Knowledge base is empty. Run build_knowledge_base.py first.",
+        )
+
     results = collection.query(query_texts=[q], n_results=1)
     context = results["documents"][0][0] if results["documents"] else ""
 
@@ -27,4 +33,4 @@ def query(q: str):
         prompt=f"Context:\n{context}\n\nQuestion: {q}\n\nAnswer clearly and concisely:"
     )
 
-    return {"answer": answer["response"]}
+    return {"answer": answer.response}
