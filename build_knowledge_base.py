@@ -1,29 +1,54 @@
+import os
 import chromadb
 
-# Load the Kubernetes knowledge document
-with open("k8s.txt", "r") as f:
-    text = f.read()
-
-# Split into chunks by paragraph - each blank line becomes a split point
-# strip() removes extra whitespace, and the if-check skips empty chunks
-chunks = [chunk.strip() for chunk in text.split("\n\n") if chunk.strip()]
-
-print(f"Loaded {len(chunks)} chunks from k8s.txt")
-
-# Initialize the same ChromaDB store used by the API
+# Initialize ChromaDB
 client = chromadb.PersistentClient(path="./db")
 
-# Create (or reuse) the collection used by the API
-collection = client.get_or_create_collection(
-    name="docs",
-)
+# Use the same collection as main.py
+collection = client.get_or_create_collection("docs")
 
-# Add chunks to the collection - ChromaDB automatically generates embeddings
+# Documents inside the docs folder
+documents = [
+    ("docs/k8s.txt", "k8s"),
+    ("docs/nextwork.txt", "nextwork"),
+]
+
+all_chunks = []
+all_ids = []
+all_metadatas = []
+
+for filepath, source in documents:
+    if not os.path.exists(filepath):
+        print(f"WARNING: {filepath} not found")
+        continue
+
+    with open(filepath, "r", encoding="utf-8") as f:
+        text = f.read()
+
+    chunks = [
+        chunk.strip()
+        for chunk in text.split("\n\n")
+        if chunk.strip()
+    ]
+
+    print(f"Loaded {len(chunks)} chunks from {filepath}")
+
+    for i, chunk in enumerate(chunks):
+        all_chunks.append(chunk)
+        all_ids.append(f"{source}-chunk{i}")
+        all_metadatas.append({
+            "source": source,
+            "chunk_index": i
+        })
+
+if not all_chunks:
+    raise RuntimeError("No documents were loaded.")
+
 collection.upsert(
-    ids=[f"chunk{i}" for i in range(len(chunks))],  # Unique ID for each chunk
-    documents=chunks,  # The actual text content
-    metadatas=[{"source": "k8s", "chunk_index": i} for i in range(len(chunks))],
+    ids=all_ids,
+    documents=all_chunks,
+    metadatas=all_metadatas,
 )
 
-print(f"Added {len(chunks)} chunks to the 'docs' collection.")
+print(f"Added {len(all_chunks)} chunks to the 'docs' collection.")
 print("Knowledge base built successfully!")

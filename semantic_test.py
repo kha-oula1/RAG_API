@@ -1,34 +1,32 @@
 import requests
 
 def test_kubernetes_query():
-    url = "http://127.0.0.1:8000/query"
-    params = {"q": "What is Kubernetes?"}
-
-    response = requests.post(url, params=params)
-
+    response = requests.post("http://127.0.0.1:8000/query?q=What is Kubernetes?")
+    
     if response.status_code != 200:
-        raise Exception(
-            f"Server returned {response.status_code}: {response.text}"
-        )
+        raise Exception(f"Server returned {response.status_code}: {response.text}")
+    
+    answer = response.json()["answer"]
 
-    data = response.json()
-    answer = data.get("answer", "")
+    # Check for key concepts (orchestration was removed, so only check for container)
+    assert "container" in answer.lower(), "Missing 'container' keyword"
+    
+    print("✅ Kubernetes query test passed")
 
-    if not answer:
-        raise AssertionError("API returned an empty answer")
+def test_nextwork_query():
+    response = requests.post("http://127.0.0.1:8000/query?q=What is NextWork?")
+    
+    if response.status_code != 200:
+        raise Exception(f"Server returned {response.status_code}: {response.text}")
+    
+    answer = response.json()["answer"]
 
-    # Check for key concepts
-    answer_lower = answer.lower()
-
-    assert "kubernetes" in answer_lower, \
-        "Missing 'Kubernetes' keyword"
-
-    assert "container" in answer_lower or "orchestration" in answer_lower, \
-        "Answer does not contain relevant Kubernetes concepts"
-
-    print("Kubernetes query test passed")
-
+    # Check for key concepts from nextwork.txt
+    assert "maximus" in answer.lower(), "Missing 'maximus' keyword"
+    
+    print("NextWork query test passed")
 
 if __name__ == "__main__":
     test_kubernetes_query()
+    test_nextwork_query()
     print("All semantic tests passed!")

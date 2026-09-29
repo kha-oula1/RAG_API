@@ -1,39 +1,43 @@
-name: RAG CI Pipeline
+name: RAG API CI
 
 on:
   push:
-    paths:
-      - 'docs/**'       # Changed from 'k8s.txt'
-      - 'main.py'
-      - 'embed_docs.py' # Changed from 'embed.py'
+  pull_request:
 
 jobs:
-  test-and-build:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
-          pip install fastapi uvicorn chromadb requests
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Rebuild embeddings
-        run: python embed_docs.py  # Changed from embed.py
+      - name: Build knowledge base
+        run: python build_knowledge_base.py
 
-      - name: Start API in mock mode
+      - name: Start FastAPI server
+        env:
+          USE_MOCK_LLM: "1"
         run: |
-          USE_MOCK_LLM=1 uvicorn app:app --host 0.0.0.0 --port 8000 &
+          uvicorn main:app --host 127.0.0.1 --port 8000 > server.log 2>&1 &
           sleep 5
+          cat server.log
+
+      - name: Check API
+        run: |
+          curl -X POST "http://127.0.0.1:8000/query?q=What%20is%20Kubernetes%3F"
 
       - name: Run semantic tests
+        env:
+          USE_MOCK_LLM: "1"
         run: python semantic_test.py
-
-      - name: Success
-        run: echo "✅ All tests passed! RAG quality maintained."
